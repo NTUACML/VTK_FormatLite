@@ -4,11 +4,12 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <algorithm>
 
 // Pre Build Class
 
 enum BlockType{ Unstructure};
-
+//=========== Point Class ============
 class VTK_Points
 {
 public:
@@ -25,7 +26,9 @@ public:
 	//- Length
 	int Leng;
 };
+//=========== Point Class ============
 
+//=========== Cell Class ============
 struct MeshCell
 {
 	MeshCell(int *NodeId_, int NodeNum_) : NodeId(NodeId_), NodeNum(NodeNum_) {};
@@ -59,7 +62,26 @@ public:
 void VTK_Cells::addCell(int *Connect, int NodeNum) {
 	Cells.emplace_back(Connect, NodeNum);
 }
+//=========== Cell Class ============
 
+//=========== Data Class ============
+class VTK_Data
+{
+public:
+	// Constructor & Distructor
+	VTK_Data() = delete;
+	~VTK_Data() {};
+	VTK_Data(std::string DataName) :Name(DataName) {};
+
+	// Add DataSet
+	void addDataSet(double *Input) { DataSet.push_back(Input); };
+
+	std::vector<double*> DataSet;
+	std::string Name;
+};
+//=========== Data Class ============
+
+//=========== XML Class ============
 class XML_Helper
 {
 public:
@@ -70,7 +92,12 @@ public:
 	// Add Attribute
 	void addAttribute(std::string Title, int Value);
 	void addAttribute(std::string Title, double Value);
-	void addAttribute(std::string Title, std::string Value);
+	void addAttribute(std::string Title, std::string Value) {Attr.emplace_back(Title, Value);};
+
+	// Edit Attribute
+	void editAttribute(std::string Title, int Value);
+	void editAttribute(std::string Title, double Value);
+	void editAttribute(std::string Title, std::string Value);
 
 	// Clear Attribute
 	void clearAttribute() { Attr.clear(); };
@@ -127,8 +154,41 @@ void XML_Helper::addAttribute(std::string Title, double Value) {
 
 	Attr.emplace_back(Title, Value_s);
 }
-void XML_Helper::addAttribute(std::string Title, std::string Value) {
-	Attr.emplace_back(Title, Value);
+void XML_Helper::editAttribute(std::string Title, int Value) {
+	std::vector<std::pair<std::string, std::string> >::iterator it = 
+		std::find_if(Attr.begin(), Attr.end(), [Title](std::pair<std::string, std::string> &T) { return T.first == Title; });
+	if (it != Attr.end()) {
+		std::ostringstream os;
+		os << Value;
+		std::string Value_s = os.str();
+		it->second = Value_s;
+	}
+	else {
+		addAttribute(Title, Value);
+	}
+}
+void XML_Helper::editAttribute(std::string Title, double Value) {
+	std::vector<std::pair<std::string, std::string> >::iterator it =
+		std::find_if(Attr.begin(), Attr.end(), [Title](std::pair<std::string, std::string> &T) { return T.first == Title; });
+	if (it != Attr.end()) {
+		std::ostringstream os;
+		os << Value;
+		std::string Value_s = os.str();
+		it->second = Value_s;
+	}
+	else {
+		addAttribute(Title, Value);
+	}
+}
+void XML_Helper::editAttribute(std::string Title, std::string Value) {
+	std::vector<std::pair<std::string, std::string> >::iterator it =
+		std::find_if(Attr.begin(), Attr.end(), [Title](std::pair<std::string, std::string> &T) { return T.first == Title; });
+	if (it != Attr.end()) {
+		it->second = Value;
+	}
+	else {
+		addAttribute(Title, Value);
+	}
 }
 
 std::string XML_Helper::printHeader() {
@@ -149,6 +209,7 @@ std::string XML_Helper::printHeader() {
 	Ostr += ">";
 	return Ostr;
 }
+//=========== XML Class ============
 
 //=========== Block Class ============
 class VTK_Element
@@ -160,12 +221,19 @@ public:
 	//- Unstructural
 	VTK_Element(VTK_Points *Points_, VTK_Cells *Cells_);
 
+	// Add Points Data
+	void addPointsData(VTK_Data* PointsData_) { PointsData.push_back( PointsData_ ); };
+	// Add Cells Data
+	void addCellsData(VTK_Data* CellsData_) { CellsData.push_back( CellsData_ ); };
+
 	// Block Type
 	BlockType MeshType;
 	// Points Coord
 	VTK_Points *Points;
 	// Cells Connectivity
 	VTK_Cells *Cells;
+	// Points Data, Cells Data
+	std::vector<VTK_Data*> PointsData, CellsData;
 };
 
 VTK_Element::~VTK_Element()
@@ -190,11 +258,11 @@ class ACML_VTK_Tools
 public:
 	// Constructor & Distructor
 	ACML_VTK_Tools() = delete;
-	~ACML_VTK_Tools();
+	~ACML_VTK_Tools() {};
 	ACML_VTK_Tools(std::string FileName_);
 
 	// New Block(Memory Controaled)
-	int NewBlock(VTK_Element* B);
+	int NewElement(VTK_Element* B);
 
 	// Save
 	bool SaveFiles();
@@ -224,12 +292,7 @@ ACML_VTK_Tools::ACML_VTK_Tools(std::string FileName_) :FileName(FileName_)
 	Counter = 0;
 };
 
-ACML_VTK_Tools::~ACML_VTK_Tools()
-{
-	
-}
-
-int ACML_VTK_Tools::NewBlock(VTK_Element* B) {
+int ACML_VTK_Tools::NewElement(VTK_Element* B) {
 	Blocks.push_back(B);
 	return int(Blocks.size());
 }
@@ -256,7 +319,7 @@ bool ACML_VTK_Tools::SingleUnstructureElementSave(std::string Name, VTK_Element*
 	XML_Helper VTKFile("VTKFile"),
 		UnstructuredGrid("UnstructuredGrid", 1),
 		Piece("Piece", 2),
-		Points("Points", 3), Cells("Cells", 3), 
+		Points("Points", 3), Cells("Cells", 3), PointsData("PointData", 3), CellsData("CellData", 3),
 		DataArray("DataArray", 4);
 
 	VTKFile.addAttribute("type", "UnstructuredGrid");
@@ -288,55 +351,92 @@ bool ACML_VTK_Tools::SingleUnstructureElementSave(std::string Name, VTK_Element*
 	File << Points.printFooter() << std::endl;
 	//- Cells
 	File << Cells.printHeader() << std::endl;
-	DataArray.clearAttribute();
-	DataArray.addAttribute("type", "Int32");
-	DataArray.addAttribute("Name", "connectivity");
-	DataArray.addAttribute("NumberOfComponents", 1);
-	DataArray.addAttribute("format", "ascii");
+	DataArray.editAttribute("type", "Int32");
+	DataArray.editAttribute("Name", "connectivity");
+	DataArray.editAttribute("NumberOfComponents", 1);
 	File << DataArray.printHeader() << std::endl;
 	for (int i = 0; i < int(Element->Cells->Cells.size()); i++)
 	{
 		File << DataArray;
 		for (int j = 0; j < Element->Cells->Cells[i].NodeNum; j++) {
 			if (j != Element->Cells->Cells[i].NodeNum - 1) {
-				File << Element->Cells->Cells[i].NodeId[j] << " ";
+				File << Element->Cells->Cells[i].NodeId[j] - 1 << " ";
 			}
 			else {
-				File << Element->Cells->Cells[i].NodeId[j];
+				File << Element->Cells->Cells[i].NodeId[j] - 1;
 			}
 		}
 		File << std::endl;
 	}
 	File << DataArray.printFooter() << std::endl;
-	DataArray.clearAttribute();
-	DataArray.addAttribute("type", "Int32");
-	DataArray.addAttribute("Name", "offsets");
-	DataArray.addAttribute("NumberOfComponents", 1);
-	DataArray.addAttribute("format", "ascii");
+	DataArray.editAttribute("Name", "offsets");
 	File << DataArray.printHeader() << std::endl;
 	int Offset = 0;
 	File << DataArray;
 	for (int i = 0; i < int(Element->Cells->Cells.size()); i++)
 	{
 		Offset += Element->Cells->Cells[i].NodeNum;
-		File << Offset << " ";
+		if (i != int(Element->Cells->Cells.size() - 1)){
+			File << Offset << " ";
+		}
+		else {
+			File << Offset << std::endl;
+		}
 	}
-	File << std::endl;
 	File << DataArray.printFooter() << std::endl;
-	DataArray.clearAttribute();
-	DataArray.addAttribute("type", "UInt8");
-	DataArray.addAttribute("Name", "types");
-	DataArray.addAttribute("NumberOfComponents", 1);
-	DataArray.addAttribute("format", "ascii");
+	DataArray.editAttribute("type", "UInt8");
+	DataArray.editAttribute("Name", "types");
 	File << DataArray.printHeader() << std::endl;
 	File << DataArray;
 	for (int i = 0; i < int(Element->Cells->Cells.size()); i++)
 	{
-		File << Element->Cells->Cells[i].getVTK_3dMeshType() << " ";
+		if (i != int(Element->Cells->Cells.size() - 1)) {
+			File << Element->Cells->Cells[i].getVTK_3dMeshType() << " ";
+		}
+		else {
+			File << Element->Cells->Cells[i].getVTK_3dMeshType() << std::endl;
+		}
 	}
-	File << std::endl;
 	File << DataArray.printFooter() << std::endl;
 	File << Cells.printFooter() << std::endl;
+
+	//- Points Data
+	if (Element->PointsData.size() > 0) {
+		File << PointsData.printHeader() << std::endl;
+		for (int i = 0; i < Element->PointsData.size(); i++)
+		{
+			DataArray.editAttribute("type", "Float32");
+			DataArray.editAttribute("Name", Element->PointsData[i]->Name);
+			DataArray.editAttribute("NumberOfComponents", int(Element->PointsData[i]->DataSet.size()));
+			File << DataArray.printHeader() << std::endl;
+			for (int j = 0; j < Element->Points->Leng; j++)
+			{
+				File << DataArray;
+				for (int k = 0; k < Element->PointsData[i]->DataSet.size(); k++)
+				{
+					if (k < Element->PointsData[i]->DataSet.size() - 1) {
+						File << *(Element->PointsData[i]->DataSet[k] + j) << " ";
+					}
+					else {
+						File << *(Element->PointsData[i]->DataSet[k] + j);
+					}
+					
+				}
+				File << std::endl;
+			}
+			File << DataArray.printFooter() << std::endl;
+		}
+
+		File << PointsData.printFooter() << std::endl;
+	}
+
+	//- Cells Data
+	if (Element->CellsData.size() > 0) {
+		File << CellsData.printHeader() << std::endl;
+
+
+		File << CellsData.printFooter() << std::endl;
+	}
 
 	//- Foot
 	File << Piece.printFooter() << std::endl;
