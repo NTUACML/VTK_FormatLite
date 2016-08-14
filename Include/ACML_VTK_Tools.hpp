@@ -5,10 +5,8 @@
 #include <string>
 #include <sstream>
 #include <algorithm>
-
-// Pre Build Class
-
 enum BlockType{ Unstructure};
+
 //=========== Point Class ============
 class VTK_Points
 {
@@ -263,15 +261,19 @@ public:
 
 	// New Block(Memory Controaled)
 	int NewElement(VTK_Element* B);
-
 	// Save
 	bool SaveFiles();
+	// Set Folder
+	void setFolder(std::string Fd) { Folder = Fd; };
+	// Set Iter(Iteration Times, Simulation Time)
+	void setIter(int IterNum, double T) { Counter = IterNum; Time = T; };
 
 private:
 	// Single Element Save file
 	bool SingleUnstructureElementSave(std::string Name, VTK_Element* Element);
 
-
+	// Get Type Extension
+	std::string getTypeExtension(BlockType T);
 
 	// File Name
 	std::string FileName;
@@ -283,7 +285,6 @@ private:
 	int Counter;
 	// Folder
 	std::string Folder;
-
 };
 
 ACML_VTK_Tools::ACML_VTK_Tools(std::string FileName_) :FileName(FileName_)
@@ -298,10 +299,23 @@ int ACML_VTK_Tools::NewElement(VTK_Element* B) {
 }
 
 bool ACML_VTK_Tools::SaveFiles() {
-	std::string OutputName;
-	OutputName += FileName;
-	OutputName += ".vtu";
-	SingleUnstructureElementSave(OutputName, *(Blocks.begin()));
+	std::ostringstream OutputName;
+	int B_Num = 0;
+	for (std::vector<VTK_Element*>::iterator it = Blocks.begin(); it != Blocks.end(); ++it) {
+		OutputName.str("");
+		OutputName.clear();
+
+		OutputName << Folder;
+		OutputName << FileName << "_Itr" << Counter << "_T" << Time << "_B" << B_Num;
+		OutputName << getTypeExtension((*it)->MeshType);
+
+		if (!SingleUnstructureElementSave(OutputName.str(), *it)) {
+			std::cout << "File: " << OutputName.str() << " Open Error" << std::endl;
+			return false;
+		}
+		B_Num++;
+	}
+	return true;
 }
 
 bool ACML_VTK_Tools::SingleUnstructureElementSave(std::string Name, VTK_Element* Element) {
@@ -333,7 +347,6 @@ bool ACML_VTK_Tools::SingleUnstructureElementSave(std::string Name, VTK_Element*
 	DataArray.addAttribute("Name", "Position");
 	DataArray.addAttribute("NumberOfComponents", 3);
 	DataArray.addAttribute("format", "ascii");
-
 
 	// Print
 	//- Head
@@ -420,21 +433,39 @@ bool ACML_VTK_Tools::SingleUnstructureElementSave(std::string Name, VTK_Element*
 					else {
 						File << *(Element->PointsData[i]->DataSet[k] + j);
 					}
-					
 				}
 				File << std::endl;
 			}
 			File << DataArray.printFooter() << std::endl;
 		}
-
 		File << PointsData.printFooter() << std::endl;
 	}
 
 	//- Cells Data
 	if (Element->CellsData.size() > 0) {
 		File << CellsData.printHeader() << std::endl;
-
-
+		for (int i = 0; i < Element->CellsData.size(); i++)
+		{
+			DataArray.editAttribute("type", "Float32");
+			DataArray.editAttribute("Name", Element->CellsData[i]->Name);
+			DataArray.editAttribute("NumberOfComponents", int(Element->CellsData[i]->DataSet.size()));
+			File << DataArray.printHeader() << std::endl;
+			for (int j = 0; j < int(Element->Cells->Cells.size()); j++)
+			{
+				File << DataArray;
+				for (int k = 0; k < Element->CellsData[i]->DataSet.size(); k++)
+				{
+					if (k < Element->CellsData[i]->DataSet.size() - 1) {
+						File << *(Element->CellsData[i]->DataSet[k] + j) << " ";
+					}
+					else {
+						File << *(Element->CellsData[i]->DataSet[k] + j);
+					}
+				}
+				File << std::endl;
+			}
+			File << DataArray.printFooter() << std::endl;
+		}
 		File << CellsData.printFooter() << std::endl;
 	}
 
@@ -445,5 +476,15 @@ bool ACML_VTK_Tools::SingleUnstructureElementSave(std::string Name, VTK_Element*
 
 	File.close();
 	return true;
+}
+inline std::string ACML_VTK_Tools::getTypeExtension(BlockType T)
+{
+	if (T == Unstructure) {
+		return std::string(".vtu");
+	}
+	else {
+		return std::string();
+	}
+	
 }
 //=========== Main Class ============
