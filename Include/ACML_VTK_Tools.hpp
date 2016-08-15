@@ -162,7 +162,6 @@ inline void XML_Helper::editAttribute(std::string Title, std::string Value) {
 	if (it != Attr.end()) { it->second = Value; }
 	else { addAttribute(Title, Value); }
 }
-
 inline std::string XML_Helper::printHeader() {
 	std::string Ostr;
 	for (int i = 0; i < Level; ++i) { Ostr += "\t"; }
