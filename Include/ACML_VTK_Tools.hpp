@@ -283,9 +283,11 @@ inline bool ACML_VTK_Tools::SaveFiles() {
 			<< getTypeExtension((*it)->MeshType);
 		OutputName << Folder << BlockName.str();
 		// Save Single Block
-		if (!SingleUnstructureElementSave(OutputName.str(), *it)) {
-			std::cout << "File: " << OutputName.str() << " Open Error" << std::endl;
-			return false;
+		if ((*it)->MeshType == Unstructure) {
+			if (!SingleUnstructureElementSave(OutputName.str(), *it)) {
+				std::cout << "File: " << OutputName.str() << " Open Error" << std::endl;
+				return false;
+			}
 		}
 		// Add into PVD Collection
 		PVD_Collection.emplace_back(Time, B_Num, 0, BlockName.str());
