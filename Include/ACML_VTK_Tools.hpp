@@ -14,8 +14,7 @@ public:
 	// Constructor & Distructor
 	VTK_Points() = delete;
 	~VTK_Points() { Leng = 0; };
-
-	// Defined Constructor
+	//- Defined Constructor
 	VTK_Points(double *_x, double *_y, double *_z, int Length) : x(_x), y(_y), z(_z), Leng(Length) {};
 
 	// Data
@@ -25,7 +24,6 @@ public:
 	int Leng;
 };
 //=========== Point Class ============
-
 //=========== Cell Class ============
 struct MeshCell
 {
@@ -34,7 +32,6 @@ struct MeshCell
 	int *NodeId;
 	int NodeNum;
 };
-
 int MeshCell::getVTK_3dMeshType() {
 	if (NodeNum == 4) return 10; // VTK_TETRA
 	else if (NodeNum == 8) return 12; // VTK_HEXAHEDRON
@@ -42,7 +39,6 @@ int MeshCell::getVTK_3dMeshType() {
 	else if (NodeNum == 5) return 14; // VTK_PYRAMID
 	else return 0;
 }
-
 class VTK_Cells
 {
 public:
@@ -56,12 +52,10 @@ public:
 	// Data
 	std::vector<MeshCell> Cells;
 };
-
 void VTK_Cells::addCell(int *Connect, int NodeNum) {
 	Cells.emplace_back(Connect, NodeNum);
 }
 //=========== Cell Class ============
-
 //=========== Data Class ============
 class VTK_Data
 {
@@ -78,7 +72,6 @@ public:
 	std::string Name;
 };
 //=========== Data Class ============
-
 //=========== XML Class ============
 class XML_Helper
 {
@@ -112,47 +105,36 @@ public:
 
 	// Friend Function for Level Overset
 	friend std::ostream &operator<<(std::ostream &s, XML_Helper Helper);
-
 private:
 	// Data
 	std::string NodeName;
 	std::vector<std::pair<std::string, std::string> > Attr;
 	int Level;
 };
-
-std::ostream &operator<<(std::ostream &s, XML_Helper Helper) {
-	for (int i = 0; i < Helper.getLevel(); ++i) {
-		s << "\t";
-	}
-	return s;
+inline std::ostream &operator<<(std::ostream &s, XML_Helper Helper) {
+	for (int i = 0; i < Helper.getLevel(); ++i) {s << "\t";} return s;
 }
-
-std::string XML_Helper::printFooter() {
+inline std::string XML_Helper::printFooter() {
 	std::string Ostr;
 	for (int i = 0; i < Level; ++i) {
 		Ostr += "\t";
 	}
-	Ostr += "</";
-	Ostr += NodeName;
-	Ostr += ">";
+	Ostr += "</"; Ostr += NodeName; Ostr += ">";
 	return Ostr;
 }
-
-void XML_Helper::addAttribute(std::string Title, int Value) {
+inline void XML_Helper::addAttribute(std::string Title, int Value) {
 	std::ostringstream os;
 	os << Value;
 	std::string Value_s = os.str();
-
 	Attr.emplace_back(Title, Value_s);
 }
-void XML_Helper::addAttribute(std::string Title, double Value) {
+inline void XML_Helper::addAttribute(std::string Title, double Value) {
 	std::ostringstream os;
 	os << Value;
 	std::string Value_s = os.str();
-
 	Attr.emplace_back(Title, Value_s);
 }
-void XML_Helper::editAttribute(std::string Title, int Value) {
+inline void XML_Helper::editAttribute(std::string Title, int Value) {
 	std::vector<std::pair<std::string, std::string> >::iterator it = 
 		std::find_if(Attr.begin(), Attr.end(), [Title](std::pair<std::string, std::string> &T) { return T.first == Title; });
 	if (it != Attr.end()) {
@@ -161,11 +143,9 @@ void XML_Helper::editAttribute(std::string Title, int Value) {
 		std::string Value_s = os.str();
 		it->second = Value_s;
 	}
-	else {
-		addAttribute(Title, Value);
-	}
+	else { addAttribute(Title, Value); }
 }
-void XML_Helper::editAttribute(std::string Title, double Value) {
+inline void XML_Helper::editAttribute(std::string Title, double Value) {
 	std::vector<std::pair<std::string, std::string> >::iterator it =
 		std::find_if(Attr.begin(), Attr.end(), [Title](std::pair<std::string, std::string> &T) { return T.first == Title; });
 	if (it != Attr.end()) {
@@ -174,41 +154,37 @@ void XML_Helper::editAttribute(std::string Title, double Value) {
 		std::string Value_s = os.str();
 		it->second = Value_s;
 	}
-	else {
-		addAttribute(Title, Value);
-	}
+	else { addAttribute(Title, Value); }
 }
-void XML_Helper::editAttribute(std::string Title, std::string Value) {
+inline void XML_Helper::editAttribute(std::string Title, std::string Value) {
 	std::vector<std::pair<std::string, std::string> >::iterator it =
 		std::find_if(Attr.begin(), Attr.end(), [Title](std::pair<std::string, std::string> &T) { return T.first == Title; });
-	if (it != Attr.end()) {
-		it->second = Value;
-	}
-	else {
-		addAttribute(Title, Value);
-	}
+	if (it != Attr.end()) { it->second = Value; }
+	else { addAttribute(Title, Value); }
 }
 
-std::string XML_Helper::printHeader() {
+inline std::string XML_Helper::printHeader() {
 	std::string Ostr;
-	for (int i = 0; i < Level; ++i) {
-		Ostr += "\t";
-	}
-	Ostr += "<";
-	Ostr += NodeName;
+	for (int i = 0; i < Level; ++i) { Ostr += "\t"; }
+	Ostr += "<"; Ostr += NodeName;
 
 	for (std::vector<std::pair<std::string, std::string> >::iterator it = Attr.begin(); it != Attr.end(); ++it) {
-		Ostr += " ";
-		Ostr += it->first;
-		Ostr += "=\"";
-		Ostr += it->second;
-		Ostr += "\"";
+		Ostr += " "; Ostr += it->first; Ostr += "=\""; Ostr += it->second; Ostr += "\"";
 	}
 	Ostr += ">";
 	return Ostr;
 }
 //=========== XML Class ============
-
+//=========== PVD Struct ============
+struct PVD_Data
+{
+	PVD_Data(double TimeStep_, int Group_, int Part_, std::string FileName_) :
+		TimeStep(TimeStep_), Group(Group_), Part(Part_), FileName(FileName_) {};
+	double TimeStep;
+	int Group, Part;
+	std::string FileName;
+};
+//=========== PVD Struct ============
 //=========== Block Class ============
 class VTK_Element
 {
@@ -233,13 +209,11 @@ public:
 	// Points Data, Cells Data
 	std::vector<VTK_Data*> PointsData, CellsData;
 };
-
 VTK_Element::~VTK_Element()
 {
 	Points = NULL;
 	Cells = NULL;
 }
-
 VTK_Element::VTK_Element(VTK_Points *Points_, VTK_Cells *Cells_) {
 	// Unstructure Mesh
 	MeshType = Unstructure;
@@ -247,9 +221,7 @@ VTK_Element::VTK_Element(VTK_Points *Points_, VTK_Cells *Cells_) {
 	Points = Points_;
 	Cells = Cells_;
 }
-
 //=========== Block Class ============
-
 //=========== Main Class ============
 class ACML_VTK_Tools
 {
@@ -271,6 +243,8 @@ public:
 private:
 	// Single Element Save file
 	bool SingleUnstructureElementSave(std::string Name, VTK_Element* Element);
+	// PVD Output
+	bool SavePVD();
 
 	// Get Type Extension
 	std::string getTypeExtension(BlockType T);
@@ -279,6 +253,8 @@ private:
 	std::string FileName;
 	// Block Set
 	std::vector<VTK_Element*> Blocks;
+	// PVD Collection
+	std::vector<PVD_Data> PVD_Collection;
 	// Time
 	double Time;
 	// Counter
@@ -286,49 +262,52 @@ private:
 	// Folder
 	std::string Folder;
 };
-
 ACML_VTK_Tools::ACML_VTK_Tools(std::string FileName_) :FileName(FileName_)
 {
 	Time = 0.0;
 	Counter = 0;
 };
-
-int ACML_VTK_Tools::NewElement(VTK_Element* B) {
+inline int ACML_VTK_Tools::NewElement(VTK_Element* B) {
 	Blocks.push_back(B);
 	return int(Blocks.size());
 }
-
-bool ACML_VTK_Tools::SaveFiles() {
-	std::ostringstream OutputName;
+inline bool ACML_VTK_Tools::SaveFiles() {
+	std::ostringstream OutputName, BlockName;
 	int B_Num = 0;
+	// Block Put
 	for (std::vector<VTK_Element*>::iterator it = Blocks.begin(); it != Blocks.end(); ++it) {
-		OutputName.str("");
-		OutputName.clear();
-
-		OutputName << Folder;
-		OutputName << FileName << "_Itr" << Counter << "_T" << Time << "_B" << B_Num;
-		OutputName << getTypeExtension((*it)->MeshType);
-
+		// Clear
+		BlockName.str(""); BlockName.clear();
+		OutputName.str(""); OutputName.clear();
+		// File Name
+		BlockName << FileName << "_Itr" << Counter << "_T" << Time << "_B" << B_Num
+			<< getTypeExtension((*it)->MeshType);
+		OutputName << Folder << BlockName.str();
+		// Save Single Block
 		if (!SingleUnstructureElementSave(OutputName.str(), *it)) {
 			std::cout << "File: " << OutputName.str() << " Open Error" << std::endl;
+			return false;
+		}
+		// Add into PVD Collection
+		PVD_Collection.emplace_back(Time, B_Num, 0, BlockName.str());
+		// Save PVD File
+		if (!SavePVD()) {
+			std::cout << "File: " << FileName << ".pvd Open Error" << std::endl;
 			return false;
 		}
 		B_Num++;
 	}
 	return true;
 }
-
-bool ACML_VTK_Tools::SingleUnstructureElementSave(std::string Name, VTK_Element* Element) {
+inline bool ACML_VTK_Tools::SingleUnstructureElementSave(std::string Name, VTK_Element* Element) {
 	std::ofstream File;
 	File.open(Name);
 	if(!File.is_open()){
 		std::cout << "Opne File: " << Name << " With Error" << std::endl;
 		return false;
 	}
-	
 	// Start Output
 	File << "<?xml version=\"1.0\"?>" << std::endl;
-
 	// Node Define
 	XML_Helper VTKFile("VTKFile"),
 		UnstructuredGrid("UnstructuredGrid", 1),
@@ -336,7 +315,7 @@ bool ACML_VTK_Tools::SingleUnstructureElementSave(std::string Name, VTK_Element*
 		Points("Points", 3), Cells("Cells", 3), PointsData("PointData", 3), CellsData("CellData", 3),
 		DataArray("DataArray", 4);
 
-	VTKFile.addAttribute("type", "UnstructuredGrid");
+	VTKFile.addAttribute("type", "UnstructuredGrid"); 
 	VTKFile.addAttribute("version", 0.1);
 	VTKFile.addAttribute("byte_order", "LittleEndian");
 
@@ -389,12 +368,8 @@ bool ACML_VTK_Tools::SingleUnstructureElementSave(std::string Name, VTK_Element*
 	for (int i = 0; i < int(Element->Cells->Cells.size()); i++)
 	{
 		Offset += Element->Cells->Cells[i].NodeNum;
-		if (i != int(Element->Cells->Cells.size() - 1)){
-			File << Offset << " ";
-		}
-		else {
-			File << Offset << std::endl;
-		}
+		if (i != int(Element->Cells->Cells.size() - 1)){ File << Offset << " "; }
+		else { File << Offset << std::endl; }
 	}
 	File << DataArray.printFooter() << std::endl;
 	DataArray.editAttribute("type", "UInt8");
@@ -477,14 +452,37 @@ bool ACML_VTK_Tools::SingleUnstructureElementSave(std::string Name, VTK_Element*
 	File.close();
 	return true;
 }
+inline bool ACML_VTK_Tools::SavePVD()
+{
+	std::string PVD_Name;
+	std::ostringstream os;
+	PVD_Name = Folder + FileName + ".pvd";
+	std::ofstream PVDFile;
+	PVDFile.open(PVD_Name);
+	if (!PVDFile.is_open()) {
+		std::cout << "PVD File Open Error" << std::endl;
+		return false;
+	}
+	// Start Output
+	PVDFile << "<?xml version = \"1.0\"?>" << std::endl
+		<< "<VTKFile type = \"Collection\" version = \"0.1\" byte_order = \"LittleEndian\">" << std::endl;
+	PVDFile << "<Collection>" << std::endl;
+	//- Collection Part
+	for (std::vector<PVD_Data>::iterator it = PVD_Collection.begin(); it != PVD_Collection.end(); it++)
+	{
+		os.str("");
+		os.clear();
+		os << "<DataSet timestep=\"" << it->TimeStep << "\" group=\"" << it->Group
+			<< "\" part=\"" << it->Part << "\" file=\"" << it->FileName << "\"/>" << std::endl;
+		PVDFile << os.str();
+	}
+	PVDFile << "</Collection>" << std::endl << "</VTKFile>" << std::endl;
+	PVDFile.close();
+	return true;
+}
 inline std::string ACML_VTK_Tools::getTypeExtension(BlockType T)
 {
-	if (T == Unstructure) {
-		return std::string(".vtu");
-	}
-	else {
-		return std::string();
-	}
-	
+	if (T == Unstructure) { return std::string(".vtu");}
+	else { return std::string();}
 }
 //=========== Main Class ============
